@@ -3,7 +3,7 @@
  * Reusable button with multiple variants
  */
 
-export function GlassButton({
+export default function GlassButton({
   children,
   onClick,
   variant = 'primary',
@@ -57,6 +57,7 @@ export function GlassButton({
 }
 
 // Simple loading spinner
+//Make a "NutriTech" themed loading spinner with a green color and a small size
 function LoadingSpinner({ size = 'sm' }) {
   const sizeClass = size === 'sm' ? 'w-4 h-4' : 'w-6 h-6';
   return (

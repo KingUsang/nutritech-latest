@@ -7,7 +7,7 @@
 
 import { useAuth } from '@/context/auth-context';
 
-export function TopBar({ userName = 'Student', batteryLevel = 20, streak = 0 }) {
+export default function TopBar({ userName = 'Student', batteryLevel = 20, streak = 0 }) {
   // Calculate battery color based on level
   const getBatteryColor = () => {
     if (batteryLevel < 30) return 'bg-red-500';

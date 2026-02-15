@@ -3,7 +3,7 @@
  * Reusable card with glassmorphism effect
  */
 
-export function GlassCard({ children, className = '', onClick }) {
+export default function GlassCard({ children, className = '', onClick }) {
   return (
     <div
       onClick={onClick}

@@ -4,6 +4,7 @@ import { useMealPlan } from '@/hooks/use-meal-plan';
 import GlassCard from '@/components/ui/glass-card';
 import GlassButton from '@/components/ui/glass-button';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import Link from 'next/link';
 
 /**
  * Meal Plan page - Display 7-day meal plan
@@ -13,7 +14,7 @@ export default function MealPlanPage() {
 
   if (loading || generating) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center min-h-[100%]">
         <LoadingSpinner size="lg" text="Loading your meal plan..." />
       </div>
     );
@@ -28,9 +29,11 @@ export default function MealPlanPage() {
           <p className="text-gray-400 mb-6">
             Complete your onboarding to generate a personalized meal plan.
           </p>
-          <GlassButton variant="primary" href="/onboarding">
-            Start Onboarding
-          </GlassButton>
+          <Link href="/onboarding">
+            <GlassButton variant="primary">
+              Start Onboarding
+            </GlassButton>
+          </Link>
         </GlassCard>
       </div>
     );
@@ -78,24 +81,35 @@ export default function MealPlanPage() {
           </h3>
 
           <div className="space-y-4">
-            {['Breakfast', 'Lunch', 'Dinner'].map((mealType) => (
+            {['Breakfast', 'Lunch', 'Dinner'].map((mealType) => {
+              // Find the specific meal for this day and type
+              const currentMeal = mealPlan.meals?.find(
+                (m) => m.day === day && m.type === mealType
+              );
+              
+              return (
               <div key={mealType} className="border-l-2 border-tech-primary/30 pl-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <div className="text-sm font-medium text-gray-400">{mealType}</div>
                     <div className="font-medium">
-                      {mealPlan.meals?.[index]?.[mealType.toLowerCase()]?.name || 'Rice & Beans Combo'}
+                      {currentMeal?.name || 'Rice & Beans Combo'}
                     </div>
                   </div>
-                  <button className="text-xl">⭐</button>
+                  <button 
+                    className="text-xl"
+                    onClick={() => currentMeal && toggleFavorite(currentMeal.id)}
+                  >
+                    {currentMeal?.isFavorite ? '⭐' : '☆'}
+                  </button>
                 </div>
                 <div className="flex gap-4 text-xs text-gray-400">
-                  <span>350 kcal</span>
-                  <span>20g protein</span>
-                  <span>₦350</span>
+                  <span>{currentMeal?.calories || 350} kcal</span>
+                  <span>{currentMeal?.protein || 20}g protein</span>
+                  <span>₦{currentMeal?.price || 350}</span>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           <div className="mt-4 pt-4 border-t border-white/10 flex justify-between text-sm">

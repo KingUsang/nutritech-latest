@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useFirestore } from './use-firebase';
+import { useSupabase } from './use-supabase';
 import { useAuth } from '@/context/auth-context';
-import { generateMealPlan } from '@/lib/groq';
-import { where, orderBy, limit } from 'firebase/firestore';
 
 /**
  * Hook for managing user meal plans
@@ -10,7 +8,7 @@ import { where, orderBy, limit } from 'firebase/firestore';
  */
 export function useMealPlan() {
   const { user } = useAuth();
-  const { getDocuments, addDocument, updateDocument } = useFirestore('mealPlans');
+  const { getDocuments, addDocument, updateDocument } = useSupabase('meal_plans');
   const [mealPlan, setMealPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -27,12 +25,14 @@ export function useMealPlan() {
     setLoading(true);
     setError(null);
     try {
-      const plans = await getDocuments([
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc'),
-        limit(1)
-      ]);
-      if (plans.length > 0) {
+      const plans = await getDocuments(query => 
+        query
+          .eq('user_id', user.uid)
+          .order('created_at', { ascending: false })
+          .limit(1)
+      );
+      
+      if (plans && plans.length > 0) {
         setMealPlan(plans[0]);
       }
     } catch (err) {
@@ -46,18 +46,37 @@ export function useMealPlan() {
     setGenerating(true);
     setError(null);
     try {
-      // Generate meal plan using Groq AI
-      const generatedPlan = await generateMealPlan(userProfile);
+      // Generate meal plan using the API endpoint (Client-side safe)
+      const response = await fetch('/api/meal-plans/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userProfile),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate meal plan');
+      }
+
+      const generatedPlan = await response.json();
       
-      // Save to Firestore
+      // Save to Supabase (exclude summary if column doesn't exist)
+      const { summary, ...planData } = generatedPlan;
+      
       const savedPlan = await addDocument({
-        userId: user.uid,
-        ...generatedPlan,
-        userProfile,
+        user_id: user.uid,
+        ...planData,
+        // If you add the summary column later, you can uncomment this:
+        // summary,
+        user_profile: userProfile,
       });
       
-      setMealPlan(savedPlan);
-      return savedPlan;
+      // Combine for local state usage so the UI still sees the summary
+      const fullPlan = { ...savedPlan, summary: generatedPlan.summary };
+      setMealPlan(fullPlan);
+      return fullPlan;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -68,17 +87,20 @@ export function useMealPlan() {
 
   const regenerateMealPlan = async () => {
     if (!mealPlan) return;
-    return createMealPlan(mealPlan.userProfile);
+    return createMealPlan(mealPlan.user_profile);
   };
 
   const toggleFavorite = async (mealId) => {
     if (!mealPlan) return;
     
+    // Note: This logic assumes 'meals' is a JSONB column in the database
+    // which is common coming from NoSQL/Firebase conversions.
     const updatedMeals = mealPlan.meals.map(meal => 
       meal.id === mealId ? { ...meal, isFavorite: !meal.isFavorite } : meal
     );
     
     const updatedPlan = { ...mealPlan, meals: updatedMeals };
+    
     await updateDocument(mealPlan.id, { meals: updatedMeals });
     setMealPlan(updatedPlan);
   };

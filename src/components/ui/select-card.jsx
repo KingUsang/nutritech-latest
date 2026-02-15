@@ -3,7 +3,7 @@
  * Clickable card for selection (gender, activity level, etc.)
  */
 
-export function SelectCard({
+export default function SelectCard({
   icon,
   label,
   value,

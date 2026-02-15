@@ -57,7 +57,7 @@ const navItems = [
   },
 ];
 
-export function BottomNav() {
+export default function BottomNav() {
   const pathname = usePathname();
 
   return (

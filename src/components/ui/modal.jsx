@@ -7,9 +7,10 @@
 
 import { useEffect } from 'react';
 
-export function Modal({ 
+export default function Modal({ 
   isOpen, 
   onClose, 
+  title,
   children, 
   className = '' 
 }) {
@@ -55,7 +56,24 @@ export function Modal({
           ${className}
         `}
       >
-        {children}
+        {/* Header */}
+        {(title || onClose) && (
+          <div className="flex items-center justify-between p-4 border-b border-white/5 sticky top-0 bg-navy-900/95 backdrop-blur z-20">
+            {title && <h3 className="text-lg font-bold">{title}</h3>}
+            {onClose && (
+              <button 
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="p-4">
+          {children}
+        </div>
       </div>
     </div>
   );

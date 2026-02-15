@@ -6,64 +6,84 @@
 import Groq from 'groq-sdk';
 
 // Initialize Groq client
+// IMPORTANT: This file should ONLY be imported in Server Components or API Routes
 export const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY, // Server-side only
+  apiKey: process.env.GROQ_API_KEY, 
 });
 
-// Default model (free tier)
-export const DEFAULT_MODEL = 'mixtral-8x7b-32768';
+// Default model (using Llama 3.3 70B Versatile for high quality and speed)
+export const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * System prompt for Nutri-Tech AI persona
  */
 export const NUTRITECH_SYSTEM_PROMPT = `You are a Nigerian Nutritionist Assistant for students.
 Your name is "NutriBot". You speak friendly, relatable English with slight Nigerian slang (pidgin lite).
-You know about: Indomie, Garri, Amala, Rice and Beans, Mama put, Campus gates.
-Your goal: Help students eat healthy on a tight budget (₦1000/day).
-Keep answers short (under 30 words usually) and actionable. Use emojis.`;
+
+Your goal is to provide affordable, healthy, and accessible meal advice using Nigerian ingredients commonly found in student areas or markets.
+
+Constraints:
+1. Always consider student budget (low cost).
+2. Recommend foods that are quick to cook (under 30 mins) or easy to store.
+3. Be encouraging and concise.
+`;
 
 /**
- * Generate meal plan using Groq
- * @param {Object} userProfile - User profile data
- * @returns {Promise<Object>} Generated meal plan
+ * Generate a 7-day meal plan based on user profile
+ * @param {Object} userProfile - User data (age, goals, budget, etc.)
+ * @returns {Promise<Object>} Generated meal plan JSON
  */
 export async function generateMealPlan(userProfile) {
   const prompt = `
-    Generate a 7-day meal plan for a Nigerian student with these details:
+    Generate a 7-day student meal plan (Breakfast, Lunch, Dinner) for a Nigerian student with these details:
+    - Age: ${userProfile.basicInfo?.age || '20'}
+    - Gender: ${userProfile.basicInfo?.gender || 'Any'}
+    - Goal: ${userProfile.healthGoals?.primaryGoal || 'Healthy Eating'}
+    - Budget: ${userProfile.budget?.level || 'Medium'} (${userProfile.budget?.amount || '5000'} Naira/week)
+    - Kitchen: ${userProfile.budget?.cookingEquipment?.join(', ') || 'Stove'}
+    - Dietary Restrictions: ${userProfile.dietAssessment?.dietType || 'None'}
+    - Allergies: ${userProfile.dietAssessment?.allergies?.join(', ') || 'None'}
     
-    Budget: ₦${userProfile.budget}/day
-    Goal: ${userProfile.goal}
-    Activity Level: ${userProfile.activityLevel}
-    Dietary Restrictions: ${userProfile.restrictions?.join(', ') || 'None'}
-    Current Symptoms: ${userProfile.symptoms?.join(', ') || 'None'}
-    
-    Format response as JSON with this structure:
+    Format the response as a strict JSON object (NO markdown code blocks, just raw JSON) with this key structure:
     {
-      "monday": {
-        "breakfast": { "name": "", "price": 0, "ingredients": [], "benefits": "" },
-        "lunch": { "name": "", "price": 0, "ingredients": [], "benefits": "" },
-        "dinner": { "name": "", "price": 0, "ingredients": [], "benefits": "" }
-      },
-      // ... repeat for tuesday through sunday
+      "title": "Weekly Plan Title",
+      "summary": "Short summary...",
+      "meals": [
+        {
+          "id": "unique_id_1",
+          "day": "Monday",
+          "type": "Breakfast",
+          "name": "Meal Name",
+          "calories": 400,
+          "protein": 15,
+          "ingredients": ["item 1", "item 2"],
+          "instructions": "Quick cooking steps",
+          "isFavorite": false
+        }
+        ... (repeat for all 7 days, 3 meals per day)
+      ]
     }
-    
-    Use realistic Nigerian student foods and campus-available prices.
   `;
 
   try {
-    const response = await groq.chat.completions.create({
+    const completion = await groq.chat.completions.create({
       messages: [
-        { role: 'system', content: NUTRITECH_SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
+        { role: 'system', content: NUTRITECH_SYSTEM_PROMPT + " Output valid JSON only." },
+        { role: 'user', content: prompt }
       ],
       model: DEFAULT_MODEL,
-      temperature: 0.7,
-      max_tokens: 4000,
+      temperature: 0.5,
+      response_format: { type: "json_object" }, 
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    let content = completion.choices[0].message.content;
+    
+    // Fallback cleanup if model includes markdown
+    content = content.replace(/```json\n?|\n?```/g, '').trim();
+
+    return JSON.parse(content);
   } catch (error) {
-    console.error('Groq meal plan generation error:', error);
+    console.error('Groq AI generation error:', error);
     throw new Error('Failed to generate meal plan');
   }
 }
@@ -82,7 +102,7 @@ export async function chatWithAI(messages) {
       ],
       model: DEFAULT_MODEL,
       temperature: 0.8,
-      max_tokens: 150,
+      max_tokens: 450,
     });
 
     return response.choices[0].message.content;

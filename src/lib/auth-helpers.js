@@ -1,18 +1,9 @@
 /**
  * Authentication Helper Functions
- * Utility functions for Firebase auth operations
+ * Utility functions for Supabase auth operations
  */
 
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  GoogleAuthProvider,
-  signInWithPopup,
-  sendPasswordResetEmail,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Register new user with email and password
@@ -24,21 +15,40 @@ import { auth, db } from './firebase';
 export async function registerUser(email, password, userData) {
   try {
     // Create auth user
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
       email,
-      password
-    );
-    const user = userCredential.user;
-
-    // Save user profile to Firestore
-    await setDoc(doc(db, 'users', user.uid), {
-      email: user.email,
-      ...userData,
-      createdAt: new Date().toISOString(),
+      password,
+      options: {
+        data: {
+          display_name: userData.displayName || '',
+          ...userData,
+        }
+      }
     });
 
-    return { uid: user.uid, email: user.email };
+    if (signUpError) throw signUpError;
+
+    if (user) {
+      // Save user profile to Supabase 'users' table
+      // Note: You might want to use a trigger for this in production, 
+      // but client-side set is closest to your existing firebase logic.
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+            id: user.id, // Important: Match auth.uid
+            email: user.email,
+            ...userData,
+            created_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError);
+        // Note: Auth user was created, but profile failed. 
+        // You might want to delete the auth user or handle this contentiously.
+      }
+    }
+
+    return { uid: user.id, email: user.email };
   } catch (error) {
     console.error('Registration error:', error);
     throw error;
@@ -53,12 +63,13 @@ export async function registerUser(email, password, userData) {
  */
 export async function loginUser(email, password) {
   try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
+    const { data: { user }, error } = await supabase.auth.signInWithPassword({
       email,
-      password
-    );
-    return { uid: userCredential.user.uid, email: userCredential.user.email };
+      password,
+    });
+
+    if (error) throw error;
+    return { uid: user.id, email: user.email };
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -71,22 +82,15 @@ export async function loginUser(email, password) {
  */
 export async function loginWithGoogle() {
   try {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
-    // Check if user exists in Firestore, create if not
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    if (!userDoc.exists()) {
-      await setDoc(doc(db, 'users', user.uid), {
-        email: user.email,
-        name: user.displayName,
-        photoURL: user.photoURL,
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    return { uid: user.uid, email: user.email };
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Google login error:', error);
     throw error;
@@ -99,7 +103,8 @@ export async function loginWithGoogle() {
  */
 export async function logoutUser() {
   try {
-    await signOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   } catch (error) {
     console.error('Logout error:', error);
     throw error;
@@ -113,7 +118,8 @@ export async function logoutUser() {
  */
 export async function resetPassword(email) {
   try {
-    await sendPasswordResetEmail(auth, email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw error;
   } catch (error) {
     console.error('Password reset error:', error);
     throw error;
@@ -121,17 +127,24 @@ export async function resetPassword(email) {
 }
 
 /**
- * Get user profile from Firestore
+ * Get user profile from Supabase
  * @param {string} uid - User ID
  * @returns {Promise<Object>} User profile data
  */
 export async function getUserProfile(uid) {
   try {
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    if (userDoc.exists()) {
-      return { uid, ...userDoc.data() };
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', uid)
+      .single();
+
+    if (error) {
+       console.warn('Error fetching profile:', error.message);
+       return null; 
     }
-    return null;
+    
+    return { uid: data.id, ...data };
   } catch (error) {
     console.error('Get user profile error:', error);
     throw error;

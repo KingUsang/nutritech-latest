@@ -3,7 +3,7 @@
  * Toggleable pill/tag for multi-select options
  */
 
-export function Pill({
+export default function Pill({
   children,
   isSelected,
   onClick,

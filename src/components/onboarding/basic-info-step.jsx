@@ -1,10 +1,13 @@
+import { useFormContext, Controller } from 'react-hook-form';
 import InputField from '@/components/ui/input-field';
 import SelectCard from '@/components/ui/select-card';
 
 /**
  * Step 1: Basic Info (age, gender, height, weight, activity)
  */
-export default function BasicInfoStep({ data, onChange }) {
+export default function BasicInfoStep() {
+  const { register, control, formState: { errors } } = useFormContext();
+
   const genders = [
     { value: 'male', label: 'Male', icon: '♂️' },
     { value: 'female', label: 'Female', icon: '♀️' },
@@ -24,15 +27,22 @@ export default function BasicInfoStep({ data, onChange }) {
           label="Age"
           type="number"
           placeholder="20"
-          value={data.basicInfo?.age || ''}
-          onChange={(e) => onChange({ basicInfo: { ...data.basicInfo, age: e.target.value } })}
+          error={errors.basicInfo?.age?.message}
+          {...register('basicInfo.age', {
+             required: 'Age is required',
+             min: { value: 16, message: 'Must be 16+' },
+             max: { value: 120, message: 'Invalid age' }
+          })}
         />
         <InputField
           label="Weight (kg)"
           type="number"
           placeholder="70"
-          value={data.basicInfo?.weight || ''}
-          onChange={(e) => onChange({ basicInfo: { ...data.basicInfo, weight: e.target.value } })}
+          error={errors.basicInfo?.weight?.message}
+          {...register('basicInfo.weight', {
+             required: 'Weight is required',
+             min: { value: 30, message: 'Invalid weight' }
+          })}
         />
       </div>
 
@@ -40,39 +50,60 @@ export default function BasicInfoStep({ data, onChange }) {
         label="Height (cm)"
         type="number"
         placeholder="170"
-        value={data.basicInfo?.height || ''}
-        onChange={(e) => onChange({ basicInfo: { ...data.basicInfo, height: e.target.value } })}
+        error={errors.basicInfo?.height?.message}
+        {...register('basicInfo.height', {
+            required: 'Height is required',
+            min: { value: 100, message: 'Invalid height' }
+        })}
       />
 
       <div>
         <label className="block text-sm font-medium mb-3">Gender</label>
+        {errors.basicInfo?.gender && (
+            <p className="text-red-400 text-xs mb-2">{errors.basicInfo.gender.message}</p>
+        )}
         <div className="grid grid-cols-2 gap-4">
-          {genders.map((gender) => (
-            <SelectCard
-              key={gender.value}
-              icon={gender.icon}
-              label={gender.label}
-              selected={data.basicInfo?.gender === gender.value}
-              onClick={() => onChange({ basicInfo: { ...data.basicInfo, gender: gender.value } })}
-            />
-          ))}
+          <Controller
+            control={control}
+            name="basicInfo.gender"
+            rules={{ required: 'Gender is required' }}
+            render={({ field: { value, onChange } }) => (
+              <>
+              {genders.map((gender) => (
+                <SelectCard
+                  key={gender.value}
+                  icon={gender.icon}
+                  label={gender.label}
+                  isSelected={value === gender.value}
+                  onClick={() => onChange(gender.value)}
+                />
+              ))}
+              </>
+            )}
+          />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium mb-3">Activity Level</label>
         <div className="space-y-2">
-          {activityLevels.map((level) => (
-            <SelectCard
-              key={level.value}
-              label={level.label}
-              description={level.description}
-              selected={data.basicInfo?.activityLevel === level.value}
-              onClick={() =>
-                onChange({ basicInfo: { ...data.basicInfo, activityLevel: level.value } })
-              }
-            />
-          ))}
+           <Controller
+            control={control}
+            name="basicInfo.activityLevel"
+            render={({ field: { value, onChange } }) => (
+              <>
+                {activityLevels.map((level) => (
+                    <SelectCard
+                    key={level.value}
+                    label={level.label}
+                    description={level.description}
+                    isSelected={value === level.value}
+                    onClick={() => onChange(level.value)}
+                    />
+                ))}
+              </>
+            )}
+           />
         </div>
       </div>
     </div>

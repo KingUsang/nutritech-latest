@@ -3,7 +3,7 @@
  * Reusable loading indicator
  */
 
-export function LoadingSpinner({ 
+export default function LoadingSpinner({ 
   size = 'md', 
   color = 'tech-primary',
   text = '',

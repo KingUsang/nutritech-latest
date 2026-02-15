@@ -1,18 +1,19 @@
+import { useFormContext, Controller } from 'react-hook-form';
 import Pill from '@/components/ui/pill';
 import { HEALTH_GOALS } from '@/lib/constants';
 
 /**
  * Step 2: Health goals (multiple selection)
  */
-export default function HealthGoalsStep({ data, onChange }) {
+export default function HealthGoalsStep() {
+  const { control, register } = useFormContext();
   const goals = HEALTH_GOALS;
 
-  const toggleGoal = (goalValue) => {
-    const currentGoals = data.healthGoals?.goals || [];
+  const toggleGoal = (currentGoals = [], goalValue, onChange) => {
     const newGoals = currentGoals.includes(goalValue)
       ? currentGoals.filter((g) => g !== goalValue)
       : [...currentGoals, goalValue];
-    onChange({ healthGoals: { ...data.healthGoals, goals: newGoals } });
+    onChange(newGoals);
   };
 
   return (
@@ -22,14 +23,23 @@ export default function HealthGoalsStep({ data, onChange }) {
           What are your health goals? (Select all that apply)
         </label>
         <div className="flex flex-wrap gap-2">
-          {goals.map((goal) => (
-            <Pill
-              key={goal.value}
-              label={goal.label}
-              selected={data.healthGoals?.goals?.includes(goal.value)}
-              onClick={() => toggleGoal(goal.value)}
-            />
-          ))}
+          <Controller
+            control={control}
+            name="healthGoals.goals"
+            render={({ field: { value, onChange } }) => (
+                <>
+                {goals.map((goal) => (
+                    <Pill
+                    key={goal.value}
+                    isSelected={value?.includes(goal.value)}
+                    onClick={() => toggleGoal(value, goal.value, onChange)}
+                    >
+                        {goal.label}
+                    </Pill>
+                ))}
+                </>
+            )}
+          />
         </div>
       </div>
 
@@ -40,10 +50,7 @@ export default function HealthGoalsStep({ data, onChange }) {
         <textarea
           className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-tech-primary focus:bg-white/10 transition-all min-h-[100px]"
           placeholder="e.g., Diabetes, allergies, etc."
-          value={data.healthGoals?.healthConditions || ''}
-          onChange={(e) =>
-            onChange({ healthGoals: { ...data.healthGoals, healthConditions: e.target.value } })
-          }
+          {...register('healthGoals.healthConditions')}
         />
       </div>
     </div>

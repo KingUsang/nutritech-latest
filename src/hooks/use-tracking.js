@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useFirestore } from './use-firebase';
+import { useSupabase } from './use-supabase';
 import { useAuth } from '@/context/auth-context';
-import { where, orderBy } from 'firebase/firestore';
 
 /**
  * Hook for managing meal tracking and nutrition logs
@@ -9,7 +8,8 @@ import { where, orderBy } from 'firebase/firestore';
  */
 export function useTracking() {
   const { user } = useAuth();
-  const { getDocuments, addDocument, updateDocument, deleteDocument } = useFirestore('tracking');
+  // Using 'tracking_logs' as table name, cleaner than generic 'tracking'
+  const { getDocuments, addDocument, updateDocument, deleteDocument } = useSupabase('tracking_logs');
   const [logs, setLogs] = useState([]);
   const [todayLogs, setTodayLogs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,16 +21,15 @@ export function useTracking() {
     }
   }, [user]);
 
-  const fetchLogs = async (startDate = null, endDate = null) => {
+  const fetchLogs = async () => {
     setLoading(true);
     setError(null);
     try {
-      const constraints = [
-        where('userId', '==', user.uid),
-        orderBy('date', 'desc')
-      ];
-
-      const allLogs = await getDocuments(constraints);
+      // Query: userId == user.uid, sort by date desc
+      const allLogs = await getDocuments((query) => 
+        query.eq('user_id', user.uid).order('date', { ascending: false })
+      );
+      
       setLogs(allLogs);
 
       // Filter today's logs
@@ -48,12 +47,14 @@ export function useTracking() {
     setError(null);
     try {
       const log = await addDocument({
-        userId: user.uid,
+        user_id: user.uid,
         date: new Date().toISOString().split('T')[0],
         timestamp: new Date().toISOString(),
         ...mealData,
       });
+      // Add to local state
       setLogs(prev => [log, ...prev]);
+      // If it's today (it is), add to todayLogs
       setTodayLogs(prev => [log, ...prev]);
       return log;
     } catch (err) {
@@ -101,10 +102,10 @@ export function useTracking() {
     todayLogs,
     loading,
     error,
-    fetchLogs,
     logMeal,
     updateLog,
     deleteLog,
     getTodayTotals,
+    fetchLogs // Exposed for manual refresh if needed
   };
 }

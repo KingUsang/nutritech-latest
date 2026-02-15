@@ -45,7 +45,7 @@ export default function SymptomsStep({ data, onChange }) {
 
   if (generating) {
     return (
-      <div className="py-12 flex flex-col items-center">
+      <div className="py-12 flex flex-col items-center justify-center min-h-[50vh]">
         <LoadingSpinner size="lg" />
         <p className="mt-6 text-tech-primary font-medium">Generating your personalized meal plan...</p>
         <p className="mt-2 text-sm text-gray-400">This may take 10-15 seconds</p>

@@ -3,7 +3,7 @@
  * iOS-style toggle switch for settings
  */
 
-export function ToggleSwitch({
+export default function ToggleSwitch({
   checked = false,
   onChange,
   label = '',

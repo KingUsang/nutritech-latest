@@ -6,8 +6,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { getUserProfile } from '@/lib/auth-helpers';
 
 // Create context
@@ -23,24 +22,48 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check active sessions and sets the user
+    const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+            setUser({
+                uid: session.user.id,
+                email: session.user.email,
+                // Supabase doesn't always have displayName in user object directly like Firebase
+                displayName: session.user.user_metadata?.display_name || session.user.user_metadata?.full_name,
+                photoURL: session.user.user_metadata?.avatar_url,
+            });
+
+            try {
+                const profile = await getUserProfile(session.user.id);
+                setUserProfile(profile);
+            } catch (error) {
+                console.error('Error fetching user profile:', error);
+            }
+        }
+        setLoading(false);
+    };
+
+    checkSession();
+
     // Listen for auth state changes
-    // Why: Firebase listener auto-updates when user logs in/out
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
         // User is signed in
         setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
+            uid: session.user.id,
+            email: session.user.email,
+            displayName: session.user.user_metadata?.display_name || session.user.user_metadata?.full_name,
+            photoURL: session.user.user_metadata?.avatar_url,
         });
 
-        // Fetch user profile from Firestore
+        // Fetch user profile from Supabase
         try {
-          const profile = await getUserProfile(firebaseUser.uid);
+          const profile = await getUserProfile(session.user.id);
           setUserProfile(profile);
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+        //   console.error('Error fetching user profile:', error);
         }
       } else {
         // User is signed out
@@ -51,7 +74,7 @@ export function AuthProvider({ children }) {
     });
 
     // Cleanup: Remove listener when component unmounts
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   const value = {

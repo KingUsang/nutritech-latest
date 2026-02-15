@@ -3,7 +3,9 @@
  * Styled input with label and error handling
  */
 
-export function InputField({
+import { forwardRef } from 'react';
+
+const InputField = forwardRef(({
   label,
   type = 'text',
   value,
@@ -13,7 +15,7 @@ export function InputField({
   required = false,
   className = '',
   ...props
-}) {
+}, ref) => {
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
@@ -24,9 +26,10 @@ export function InputField({
       )}
       
       <input
+        ref={ref}
         type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
         placeholder={placeholder}
         className={`
           w-full px-4 py-3 rounded-xl
@@ -44,4 +47,8 @@ export function InputField({
       )}
     </div>
   );
-}
+});
+
+InputField.displayName = 'InputField';
+
+export default InputField;

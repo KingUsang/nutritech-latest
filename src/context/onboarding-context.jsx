@@ -18,31 +18,35 @@ export function OnboardingProvider({ children }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
-    age: '',
-    gender: '',
-    university: '',
+    basicInfo: {
+      age: '',
+      gender: '',
+      weight: '',
+      height: '',
+      activityLevel: '', 
+    },
     
     // Step 2: Health & Goals
-    healthIssues: [],
-    goal: '',
-    activityLevel: '',
+    healthGoals: {
+      goals: [],
+    },
     
     // Step 3: Diet Assessment
-    currentBreakfast: '',
-    vegetableIntake: '',
-    foodSources: [],
+    dietAssessment: {
+      dietType: '',
+      allergies: [],
+    },
     
     // Step 4: Budget & Constraints
-    dailyBudget: 1000,
-    dietaryRestrictions: [],
-    dislikedFoods: '',
-    likedFoods: '',
-    prepTime: '',
+    budgetConstraints: {
+      dailyBudget: 1000,
+      mealPrep: 'both',
+    },
     
     // Step 5: Symptoms
-    energyLevel: 3,
-    focusLevel: 3,
-    healthConcerns: [],
+    symptoms: {
+      list: [],
+    },
   });
 
   /**
@@ -89,23 +93,11 @@ export function OnboardingProvider({ children }) {
   const resetOnboarding = () => {
     setCurrentStep(1);
     setFormData({
-      age: '',
-      gender: '',
-      university: '',
-      healthIssues: [],
-      goal: '',
-      activityLevel: '',
-      currentBreakfast: '',
-      vegetableIntake: '',
-      foodSources: [],
-      dailyBudget: 1000,
-      dietaryRestrictions: [],
-      dislikedFoods: '',
-      likedFoods: '',
-      prepTime: '',
-      energyLevel: 3,
-      focusLevel: 3,
-      healthConcerns: [],
+        basicInfo: {},
+        healthGoals: { goals: [] },
+        dietAssessment: { allergies: [] },
+        budgetConstraints: {},
+        symptoms: { list: [] }
     });
   };
 
@@ -118,7 +110,7 @@ export function OnboardingProvider({ children }) {
     prevStep,
     resetOnboarding,
     totalSteps: ONBOARDING_STEPS.TOTAL,
-    progress: (currentStep / ONBOARDING_STEPS.TOTAL) * 100,
+    progress: ((currentStep - 1) / ONBOARDING_STEPS.TOTAL) * 100,
   };
 
   return (

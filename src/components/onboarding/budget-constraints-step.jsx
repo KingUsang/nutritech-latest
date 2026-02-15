@@ -1,30 +1,31 @@
+import { useFormContext, Controller } from 'react-hook-form';
 import InputField from '@/components/ui/input-field';
 import ToggleSwitch from '@/components/ui/toggle-switch';
 
 /**
  * Step 4: Budget and constraints
  */
-export default function BudgetConstraintsStep({ data, onChange }) {
+export default function BudgetConstraintsStep() {
+  const { register, control, formState: { errors } } = useFormContext();
+
   return (
     <div className="space-y-6">
       <InputField
         label="Daily Food Budget (₦)"
         type="number"
         placeholder="1000"
-        value={data.budgetConstraints?.dailyBudget || ''}
-        onChange={(e) =>
-          onChange({ budgetConstraints: { ...data.budgetConstraints, dailyBudget: e.target.value } })
-        }
+        error={errors.budgetConstraints?.dailyBudget?.message}
+        {...register('budgetConstraints.dailyBudget', {
+            required: 'Daily budget is required',
+            min: { value: 100, message: 'Minimum ₦100' }
+        })}
       />
 
       <div>
         <label className="block text-sm font-medium mb-2">Meal Preparation Preference</label>
         <select
           className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-tech-primary focus:bg-white/10 transition-all"
-          value={data.budgetConstraints?.mealPrep || 'both'}
-          onChange={(e) =>
-            onChange({ budgetConstraints: { ...data.budgetConstraints, mealPrep: e.target.value } })
-          }
+          {...register('budgetConstraints.mealPrep')}
         >
           <option value="both" className="bg-navy-800">Both Cooking & Buying</option>
           <option value="cooking" className="bg-navy-800">Mostly Cooking</option>
@@ -37,11 +38,15 @@ export default function BudgetConstraintsStep({ data, onChange }) {
           <div className="font-medium">Access to Kitchen</div>
           <div className="text-sm text-gray-400">Can you cook in your accommodation?</div>
         </div>
-        <ToggleSwitch
-          checked={data.budgetConstraints?.hasKitchen || false}
-          onChange={(checked) =>
-            onChange({ budgetConstraints: { ...data.budgetConstraints, hasKitchen: checked } })
-          }
+        <Controller
+          control={control}
+          name="budgetConstraints.hasKitchen"
+          render={({ field: { value, onChange } }) => (
+            <ToggleSwitch
+                checked={value}
+                onChange={onChange}
+            />
+          )}
         />
       </div>
 
@@ -50,13 +55,15 @@ export default function BudgetConstraintsStep({ data, onChange }) {
           <div className="font-medium">Market Access</div>
           <div className="text-sm text-gray-400">Easy access to fresh food markets?</div>
         </div>
-        <ToggleSwitch
-          checked={data.budgetConstraints?.hasMarketAccess || false}
-          onChange={(checked) =>
-            onChange({
-              budgetConstraints: { ...data.budgetConstraints, hasMarketAccess: checked },
-            })
-          }
+        <Controller
+            control={control}
+            name="budgetConstraints.hasMarketAccess"
+            render={({ field: { value, onChange } }) => (
+                <ToggleSwitch
+                    checked={value}
+                    onChange={onChange}
+                />
+            )}
         />
       </div>
     </div>
