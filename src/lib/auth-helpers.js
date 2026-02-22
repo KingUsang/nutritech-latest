@@ -28,25 +28,8 @@ export async function registerUser(email, password, userData) {
 
     if (signUpError) throw signUpError;
 
-    if (user) {
-      // Save user profile to Supabase 'users' table
-      // Note: You might want to use a trigger for this in production, 
-      // but client-side set is closest to your existing firebase logic.
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-            id: user.id, // Important: Match auth.uid
-            email: user.email,
-            ...userData,
-            created_at: new Date().toISOString(),
-        });
-
-      if (profileError) {
-        console.error('Error creating user profile:', profileError);
-        // Note: Auth user was created, but profile failed. 
-        // You might want to delete the auth user or handle this contentiously.
-      }
-    }
+    // All user data is stored in user_metadata via auth.signUp options above.
+    // No separate public.users table insert needed.
 
     return { uid: user.id, email: user.email };
   } catch (error) {
@@ -127,24 +110,31 @@ export async function resetPassword(email) {
 }
 
 /**
- * Get user profile from Supabase
- * @param {string} uid - User ID
+ * Get user profile from Supabase auth.users (via supabase.auth.getUser())
+ * No public.users table needed — data comes from auth metadata.
+ * @param {string} uid - User ID (used to verify match)
  * @returns {Promise<Object>} User profile data
  */
 export async function getUserProfile(uid) {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', uid)
-      .single();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error) {
-       console.warn('Error fetching profile:', error.message);
-       return null; 
+      console.warn('Error fetching auth user:', error.message);
+      return null;
     }
-    
-    return { uid: data.id, ...data };
+
+    if (!user || user.id !== uid) return null;
+
+    const meta = user.user_metadata || {};
+
+    return {
+      uid: user.id,
+      email: user.email,
+      displayName: meta.display_name || meta.full_name || meta.name || '',
+      university: meta.university || '',
+      ...meta,
+    };
   } catch (error) {
     console.error('Get user profile error:', error);
     throw error;

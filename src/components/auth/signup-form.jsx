@@ -116,7 +116,12 @@ export default function SignupForm({ onToggle }) {
           )}
         </div>
 
-        <GlassButton type="submit" variant="primary" fullWidth disabled={loading}>
+        <GlassButton
+          type="submit"
+          variant="primary"
+          className="w-fit mx-auto"
+          disabled={loading}
+        >
           {loading ? 'Creating Account...' : 'Create Account'}
         </GlassButton>
       </form>

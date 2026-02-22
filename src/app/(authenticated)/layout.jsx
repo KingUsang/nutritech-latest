@@ -8,8 +8,15 @@ import BottomNav from '@/components/layout/bottom-nav';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 
 export default function AuthenticatedLayout({ children }) {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
+  const userName =
+    userProfile?.displayName ||
+    userProfile?.full_name ||
+    userProfile?.name ||
+    user?.displayName ||
+    user?.email?.split('@')[0] ||
+    'Student';
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,7 +38,7 @@ export default function AuthenticatedLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-tech-900">
-      <TopBar />
+      <TopBar userName={userName} />
       <main className="pt-20 pb-24 px-4">
         {children}
       </main>

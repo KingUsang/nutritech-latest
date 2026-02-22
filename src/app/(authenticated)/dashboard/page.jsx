@@ -10,9 +10,16 @@ import Link from 'next/link';
  * Dashboard page - Main home screen
  */
 export default function DashboardPage() {
-  const { userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
   const { todayLogs, getTodayTotals } = useTracking();
   const { mealPlan } = useMealPlan();
+  const userName =
+    userProfile?.displayName ||
+    userProfile?.full_name ||
+    userProfile?.name ||
+    user?.displayName ||
+    user?.email?.split('@')[0] ||
+    'Student';
 
   const totals = getTodayTotals();
   const targetCalories = 2000; // This would come from user profile
@@ -29,7 +36,7 @@ export default function DashboardPage() {
       {/* Welcome Card */}
       <GlassCard className="p-6">
         <h1 className="text-2xl font-bold mb-2">
-          Welcome back, {userProfile?.displayName || 'Student'}! 👋
+          Welcome back, {userName}! 👋
         </h1>
         <p className="text-gray-400">
           Let's continue your journey to better health and focus.

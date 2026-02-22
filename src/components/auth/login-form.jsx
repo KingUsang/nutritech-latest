@@ -92,7 +92,12 @@ export default function LoginForm({ onToggle }) {
           />
         </div>
 
-        <GlassButton type="submit" variant="primary" fullWidth disabled={loading}>
+        <GlassButton
+          type="submit"
+          variant="primary"
+          className="w-fit mx-auto"
+          disabled={loading}
+        >
           {loading ? 'Signing In...' : 'Sign In'}
         </GlassButton>
       </form>
