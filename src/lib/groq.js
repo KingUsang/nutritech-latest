@@ -38,9 +38,9 @@ export async function generateMealPlan(userProfile) {
     Generate a 7-day student meal plan (Breakfast, Lunch, Dinner) for a Nigerian student with these details:
     - Age: ${userProfile.basicInfo?.age || '20'}
     - Gender: ${userProfile.basicInfo?.gender || 'Any'}
-    - Goal: ${userProfile.healthGoals?.primaryGoal || 'Healthy Eating'}
-    - Budget: ${userProfile.budget?.level || 'Medium'} (${userProfile.budget?.amount || '5000'} Naira/week)
-    - Kitchen: ${userProfile.budget?.cookingEquipment?.join(', ') || 'Stove'}
+    - Goal: ${userProfile.healthGoals?.goals?.[0] || 'Healthy Eating'}
+    - Daily Budget: ₦${userProfile.budgetConstraints?.dailyBudget || '1000'} Naira/day
+    - Kitchen: ${userProfile.budgetConstraints?.cookingEquipment?.join(', ') || userProfile.budgetConstraints?.mealPrep || 'Stove'}
     - Dietary Restrictions: ${userProfile.dietAssessment?.dietType || 'None'}
     - Allergies: ${userProfile.dietAssessment?.allergies?.join(', ') || 'None'}
     

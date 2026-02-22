@@ -10,16 +10,23 @@ export function useMealPlan() {
   const { user } = useAuth();
   const { getDocuments, addDocument, updateDocument } = useSupabase('meal_plans');
   const [mealPlan, setMealPlan] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // true by default so page never flickers
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch user's current meal plan
+  // Use stable user.uid as dependency — avoids double-fetch when auth context
+  // creates two new user object references on the same session (checkSession + onAuthStateChange)
+  const userId = user?.uid;
+
   useEffect(() => {
-    if (user) {
+    if (userId) {
       fetchMealPlan();
+    } else {
+      // No user yet — stop loading so page doesn't hang
+      setLoading(false);
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const fetchMealPlan = async () => {
     setLoading(true);
@@ -27,7 +34,7 @@ export function useMealPlan() {
     try {
       const plans = await getDocuments(query => 
         query
-          .eq('user_id', user.uid)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1)
       );
