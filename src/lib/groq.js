@@ -48,6 +48,15 @@ export async function generateMealPlan(userProfile) {
     {
       "title": "Weekly Plan Title",
       "summary": "Short summary...",
+      "weekly_totals": {
+        "budget": 5000,
+        "avg_calories": 2000,
+        "avg_protein": 60
+      },
+      "shopping_list": [
+        "Rice (2 cups)", 
+        "Beans (1 derica)"
+      ],
       "meals": [
         {
           "id": "unique_id_1",
@@ -56,6 +65,7 @@ export async function generateMealPlan(userProfile) {
           "name": "Meal Name",
           "calories": 400,
           "protein": 15,
+          "price": 350,
           "ingredients": ["item 1", "item 2"],
           "instructions": "Quick cooking steps",
           "isFavorite": false
