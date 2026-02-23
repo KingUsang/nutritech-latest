@@ -40,7 +40,10 @@ export function useMealPlan() {
       );
       
       if (plans && plans.length > 0) {
-        setMealPlan(plans[0]);
+        const row = plans[0];
+        // Unwrap plan_data if the row uses the JSON blob pattern
+        const fullPlan = row.plan_data ? { ...row, ...row.plan_data } : row;
+        setMealPlan(fullPlan);
       }
     } catch (err) {
       setError(err.message);
@@ -52,7 +55,11 @@ export function useMealPlan() {
   const createMealPlan = async (userProfile) => {
     setGenerating(true);
     setError(null);
+    const clientStart = Date.now();
+    console.log('[useMealPlan] ▶ createMealPlan started');
     try {
+      console.log('[useMealPlan] 📡 Sending fetch to /api/meal-plans/generate...');
+      const fetchStart = Date.now();
       // Generate meal plan using the API endpoint (Client-side safe)
       const response = await fetch('/api/meal-plans/generate', {
         method: 'POST',
@@ -61,30 +68,35 @@ export function useMealPlan() {
         },
         body: JSON.stringify(userProfile),
       });
+      console.log(`[useMealPlan] ✅ fetch() resolved in ${Date.now() - fetchStart}ms — status: ${response.status}`);
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to generate meal plan');
       }
 
+      const t1 = Date.now();
       const generatedPlan = await response.json();
-      
-      // Save to Supabase (exclude summary if column doesn't exist)
-      const { summary, ...planData } = generatedPlan;
-      
+      console.log(`[useMealPlan] ✅ Response JSON parsed in ${Date.now() - t1}ms`);
+
+      // Save to Supabase — store the whole plan as a single JSON blob
+      // to avoid column-not-found errors if the schema is minimal
+      console.log('[useMealPlan] 💾 Saving to Supabase...');
+      const t2 = Date.now();
       const savedPlan = await addDocument({
         user_id: user.uid,
-        ...planData,
-        // If you add the summary column later, you can uncomment this:
-        // summary,
+        plan_data: generatedPlan,
         user_profile: userProfile,
       });
-      
-      // Combine for local state usage so the UI still sees the summary
-      const fullPlan = { ...savedPlan, summary: generatedPlan.summary };
+      console.log(`[useMealPlan] ✅ Supabase save done in ${Date.now() - t2}ms`);
+
+      // Merge saved row with full plan so UI sees all fields
+      const fullPlan = { ...savedPlan, ...generatedPlan };
       setMealPlan(fullPlan);
+      console.log(`[useMealPlan] 🏁 Total createMealPlan time: ${Date.now() - clientStart}ms`);
       return fullPlan;
     } catch (err) {
+      console.error(`[useMealPlan] 💥 Error after ${Date.now() - clientStart}ms:`, err);
       setError(err.message);
       throw err;
     } finally {

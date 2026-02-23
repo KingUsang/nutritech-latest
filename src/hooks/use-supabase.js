@@ -14,7 +14,9 @@ export function useSupabase(tableName) {
     setLoading(true);
     setError(null);
     try {
-      const { data: result, error } = await supabase
+      console.log(`[useSupabase:${tableName}] ▶ insert — payload keys:`, Object.keys(data));
+
+      const { data: result, error, status, statusText } = await supabase
         .from(tableName)
         .insert({
           ...data,
@@ -23,9 +25,14 @@ export function useSupabase(tableName) {
         .select()
         .single();
 
+      console.log(`[useSupabase:${tableName}] insert response — status: ${status} ${statusText}`);
+      console.log(`[useSupabase:${tableName}]   data:`, result);
+      console.log(`[useSupabase:${tableName}]   error:`, error);
+
       if (error) throw error;
       return result;
     } catch (err) {
+      console.error(`[useSupabase:${tableName}] 💥 insert caught error:`, err);
       setError(err.message);
       throw err;
     } finally {

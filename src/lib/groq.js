@@ -11,8 +11,8 @@ export const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY, 
 });
 
-// Default model (using Llama 3.3 70B Versatile for high quality and speed)
-export const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
+// Fast model for meal plan generation
+export const DEFAULT_MODEL = 'llama-3.1-8b-instant';
 
 /**
  * System prompt for Nutri-Tech AI persona
@@ -44,6 +44,7 @@ export async function generateMealPlan(userProfile) {
     - Dietary Restrictions: ${userProfile.dietAssessment?.dietType || 'None'}
     - Allergies: ${userProfile.dietAssessment?.allergies?.join(', ') || 'None'}
     
+    Be concise. Keep meal names short, max 3 ingredients per meal, instructions under 15 words.
     Format the response as a strict JSON object (NO markdown code blocks, just raw JSON) with this key structure:
     {
       "title": "Weekly Plan Title",
@@ -76,6 +77,8 @@ export async function generateMealPlan(userProfile) {
   `;
 
   try {
+    const t0 = Date.now();
+    console.log('[Groq] ▶ Sending request to Groq API...');
     const completion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: NUTRITECH_SYSTEM_PROMPT + " Output valid JSON only." },
@@ -83,17 +86,26 @@ export async function generateMealPlan(userProfile) {
       ],
       model: DEFAULT_MODEL,
       temperature: 0.5,
-      response_format: { type: "json_object" }, 
+      max_tokens: 4000,
+      response_format: { type: "json_object" },
     });
 
+    console.log(`[Groq] ✅ Groq API raw response received in ${Date.now() - t0}ms`);
+    console.log(`[Groq]    model: ${completion.model}`);
+    console.log(`[Groq]    prompt_tokens: ${completion.usage?.prompt_tokens}, completion_tokens: ${completion.usage?.completion_tokens}, total_tokens: ${completion.usage?.total_tokens}`);
+
+    const t1 = Date.now();
     let content = completion.choices[0].message.content;
-    
+
     // Fallback cleanup if model includes markdown
     content = content.replace(/```json\n?|\n?```/g, '').trim();
 
-    return JSON.parse(content);
+    const parsed = JSON.parse(content);
+    console.log(`[Groq] ✅ JSON parsed in ${Date.now() - t1}ms`);
+    console.log(`[Groq]    meals count: ${parsed.meals?.length ?? 'N/A'}`);
+    return parsed;
   } catch (error) {
-    console.error('Groq AI generation error:', error);
+    console.error('[Groq] 💥 Generation error:', error);
     throw new Error('Failed to generate meal plan');
   }
 }
