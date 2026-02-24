@@ -72,7 +72,9 @@ export function useMealPlan() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate meal plan');
+        const err = new Error(errorData.error || 'Failed to generate meal plan');
+        err.status = response.status;
+        throw err;
       }
 
       const t1 = Date.now();

@@ -6,11 +6,12 @@
 import { GoogleGenAI } from '@google/genai';
 
 // Model for meal plan generation and chat
-export const DEFAULT_MODEL = 'gemini-2.0-flash';
+export const DEFAULT_MODEL = 'gemini-3-flash-preview';
+export const FALLBACK_MODEL = 'gemini-3-flash-preview';
 
 // Lazy client getter — only instantiated at request time, not at build time
 function getAI() {
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  return new GoogleGenAI({});
 }
 
 /**
@@ -67,9 +68,27 @@ export async function generateMealPlan(userProfile) {
   const typicalDinner = userProfile.dietAssessment?.typicalDinner || 'Not specified';
   const activityLevel = userProfile.healthGoals?.activityLevel || 'Moderately active';
   const healthConditions = userProfile.basicInfo?.healthConditions?.join(', ') || 'None';
-  const symptoms = userProfile.symptoms ? Object.entries(userProfile.symptoms)
-    .filter(([, val]) => val && val !== 'good' && val !== 'high')
-    .map(([key, val]) => `${key}: ${val}`).join(', ') : 'None reported';
+  const symptoms = userProfile.symptoms?.list?.join(', ') || 'None reported';
+  const stressLevel = symptoms.includes('Always Tired') || symptoms.includes('Sleep Issues') ? 'High' : 'Normal';
+
+  // Fetch Western Blueprint from Spoonacular
+  let blueprintData = {};
+  try {
+    const spoonApiKey = process.env.SPOONACULAR_API_KEY || 'bbcfc275a92c47dcab323855a704568d';
+    const targetCalories = 2000; // Default or derive from profile
+    console.log('[Spoonacular] ▶ Fetching weekly blueprint...');
+    const spoonRes = await fetch(
+      `https://api.spoonacular.com/mealplanner/generate?timeFrame=week&targetCalories=${targetCalories}&apiKey=${spoonApiKey}`
+    );
+    if (spoonRes.ok) {
+      blueprintData = await spoonRes.json();
+      console.log('[Spoonacular] ✅ Blueprint fetched successfully');
+    } else {
+      console.warn('[Spoonacular] ⚠️ Failed to fetch blueprint:', spoonRes.statusText);
+    }
+  } catch (err) {
+    console.warn('[Spoonacular] ⚠️ Error fetching blueprint:', err.message);
+  }
 
   const prompt = `
     You are generating a 7-day personalized meal plan for a Nigerian university student. Read their profile carefully and apply the campus survival constraints.
@@ -79,6 +98,7 @@ export async function generateMealPlan(userProfile) {
     - Health Goals: ${goals}
     - Health Conditions: ${healthConditions}
     - Reported Symptoms: ${symptoms}
+    - Stress Level: ${stressLevel}
     - Activity Level: ${activityLevel}
     - Daily Budget: ₦${dailyBudget} | Weekly Budget: ₦${weeklyBudget}
     - Cooking Equipment: ${equipment}
@@ -86,6 +106,10 @@ export async function generateMealPlan(userProfile) {
     - Dietary Restrictions: ${dietType}
     - Allergies: ${allergies}
     - Current Typical Meals: Breakfast: ${typicalBreakfast} | Lunch: ${typicalLunch} | Dinner: ${typicalDinner}
+
+    ## WESTERN BLUEPRINT (SPOONACULAR)
+    Translate this Western blueprint to Nigerian Student Meals.
+    Blueprint: ${JSON.stringify(blueprintData)}
 
     ## RULES YOU MUST FOLLOW
     1. Every meal must use only affordable Nigerian campus-market ingredients.
@@ -96,11 +120,15 @@ export async function generateMealPlan(userProfile) {
     6. Make the total cost of all 7 days realistically fit within the weekly budget of ₦${weeklyBudget}.
     7. Include a single consolidated campus market shopping list with realistic ₦ prices.
     8. Include one practical Student Survival Tip at the end.
+    9. NO HALLUCINATIONS: Do NOT pair Pap with Groundnuts. Pap goes with Akara or Moin-Moin.
+    10. REAL PRICES: Search for current 2024/2025 Nigerian market prices.
+    11. COMPARISON: Explicitly state WHICH Western meal you are replacing and WHY in the replacementLogic field.
 
     Format the response as a strict JSON object (NO markdown code blocks, just raw JSON) with this key structure:
     {
       "title": "Weekly Plan Title",
       "summary": "Short summary...",
+      "healthNote": "Biomarker Scan detected High Stress. We prioritized Magnesium-rich foods (Beans, Fish) to support nervous system recovery.",
       "weekly_totals": {
         "budget": 5000,
         "avg_calories": 2000,
@@ -117,6 +145,8 @@ export async function generateMealPlan(userProfile) {
           "day": "Monday",
           "type": "Breakfast",
           "name": "Meal Name",
+          "westernOriginal": "Avocado Toast",
+          "replacementLogic": "Yam provides more sustainable energy for a student's long day than light toast.",
           "calories": 400,
           "protein": 15,
           "price": 350,
@@ -129,12 +159,10 @@ export async function generateMealPlan(userProfile) {
     }
   `;
 
-  try {
-    const t0 = Date.now();
-    console.log('[Gemini] ▶ Sending request to Gemini API...');
-
+  const callGemini = async (model) => {
+    console.log(`[Gemini] ▶ Sending request with model: ${model}`);
     const result = await getAI().models.generateContent({
-      model: DEFAULT_MODEL,
+      model,
       contents: prompt,
       config: {
         systemInstruction: NUTRITECH_SYSTEM_PROMPT + ' Output valid JSON only.',
@@ -143,6 +171,31 @@ export async function generateMealPlan(userProfile) {
         maxOutputTokens: 8192,
       },
     });
+    return result;
+  };
+
+  const isQuotaError = (err) => {
+    const msg = err?.message || '';
+    return (
+      err?.status === 429 ||
+      (typeof msg === 'string' && (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')))
+    );
+  };
+
+  try {
+    const t0 = Date.now();
+    let result;
+
+    try {
+      result = await callGemini(DEFAULT_MODEL);
+    } catch (primaryError) {
+      if (isQuotaError(primaryError)) {
+        console.warn(`[Gemini] ⚠️ ${DEFAULT_MODEL} quota exhausted — retrying with ${FALLBACK_MODEL}`);
+        result = await callGemini(FALLBACK_MODEL);
+      } else {
+        throw primaryError;
+      }
+    }
 
     console.log(`[Gemini] ✅ Response received in ${Date.now() - t0}ms`);
 
@@ -157,7 +210,15 @@ export async function generateMealPlan(userProfile) {
     console.log(`[Gemini]    meals count: ${parsed.meals?.length ?? 'N/A'}`);
     return parsed;
   } catch (error) {
-    console.error('[Gemini] 💥 Generation error:', error);
+    console.error('[Gemini] 💥 Generation error:', error?.message ?? error);
+    // Surface quota/rate-limit errors with a recognisable status code
+    if (isQuotaError(error)) {
+      const quotaErr = new Error(
+        'AI quota exhausted. The free-tier daily limit has been reached. Please try again tomorrow or enable billing on your Google AI account.'
+      );
+      quotaErr.status = 429;
+      throw quotaErr;
+    }
     throw new Error('Failed to generate meal plan');
   }
 }

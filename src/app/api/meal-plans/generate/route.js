@@ -34,10 +34,11 @@ export async function POST(request) {
     console.log(`[MealPlan] 🏁 Total route time: ${Date.now() - routeStart}ms`);
     return NextResponse.json(mealPlan);
   } catch (error) {
-    console.error(`[MealPlan] 💥 Error after ${Date.now() - routeStart}ms:`, error);
+    console.error(`[MealPlan] 💥 Error after ${Date.now() - routeStart}ms:`, error.message);
+    const statusCode = error.status === 429 ? 429 : 500;
     return NextResponse.json(
-      { error: 'Failed to generate meal plan', details: error.message },
-      { status: 500 }
+      { error: error.message || 'Failed to generate meal plan', details: error.message },
+      { status: statusCode }
     );
   }
 }

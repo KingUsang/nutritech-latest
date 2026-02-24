@@ -56,7 +56,7 @@ export default function MealPlanPage() {
 
       {/* Weekly Summary */}
       <GlassCard className="p-6">
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-3 gap-4 text-center mb-6">
           <div>
             <div className="text-2xl font-bold text-tech-primary">₦{mealPlan.weekly_totals?.budget || '7,000'}</div>
             <div className="text-xs text-gray-400">Weekly Budget</div>
@@ -70,6 +70,15 @@ export default function MealPlanPage() {
             <div className="text-xs text-gray-400">Avg Protein/Day</div>
           </div>
         </div>
+        
+        {mealPlan.healthNote && (
+          <div className="bg-tech-primary/10 p-4 rounded-xl border border-tech-primary/20">
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-tech-primary">Nutritionist Insight</p>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              {mealPlan.healthNote}
+            </p>
+          </div>
+        )}
       </GlassCard>
 
       {/* Daily Meals */}
@@ -107,11 +116,23 @@ export default function MealPlanPage() {
                     {currentMeal?.isFavorite ? '⭐' : '☆'}
                   </button>
                 </div>
-                <div className="flex gap-4 text-xs text-gray-400">
+                <div className="flex gap-4 text-xs text-gray-400 mb-3">
                   <span>{currentMeal?.calories || 0} kcal</span>
                   <span>{currentMeal?.protein || 0}g protein</span>
                   <span>₦{currentMeal?.price || 0}</span>
                 </div>
+                
+                {currentMeal?.westernOriginal && currentMeal?.replacementLogic && (
+                  <div className="bg-white/5 p-3 rounded-lg border border-white/10 mt-2">
+                    <div className="flex items-center gap-2 mb-1 opacity-50">
+                      <span className="text-[10px] font-bold line-through tracking-tighter uppercase italic">{currentMeal.westernOriginal}</span>
+                      <span className="text-[10px]">→</span>
+                    </div>
+                    <p className="text-[10px] text-tech-primary font-bold uppercase tracking-wider leading-relaxed">
+                      {currentMeal.replacementLogic}
+                    </p>
+                  </div>
+                )}
               </div>
             )})}
           </div>
@@ -127,12 +148,21 @@ export default function MealPlanPage() {
       <GlassCard className="p-6">
         <h3 className="text-lg font-bold mb-4">🛒 Weekly Shopping List</h3>
         <div className="grid grid-cols-2 gap-2 text-sm">
-          {(mealPlan.shopping_list || ['No items yet']).map((item) => (
-            <div key={item} className="flex items-center gap-2 p-2 rounded bg-white/5">
-              <input type="checkbox" className="rounded" />
-              <span>{item}</span>
-            </div>
-          ))}
+          {(mealPlan.shopping_list || []).map((item, idx) => {
+            // Handle both string items and object items {item, estimated_price}
+            const itemName = typeof item === 'string' ? item : item.item;
+            const itemPrice = typeof item === 'object' && item.estimated_price ? ` (₦${item.estimated_price})` : '';
+            
+            return (
+              <div key={idx} className="flex items-center gap-2 p-2 rounded bg-white/5">
+                <input type="checkbox" className="rounded" />
+                <span>{itemName}{itemPrice}</span>
+              </div>
+            );
+          })}
+          {(!mealPlan.shopping_list || mealPlan.shopping_list.length === 0) && (
+            <div className="col-span-2 text-gray-400">No items yet</div>
+          )}
         </div>
       </GlassCard>
     </div>
