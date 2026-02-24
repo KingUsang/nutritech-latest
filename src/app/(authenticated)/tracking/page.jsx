@@ -49,7 +49,7 @@ export default function TrackingPage() {
 
       {/* Today's Summary */}
       <GlassCard className="p-6">
-        <h3 className="font-bold mb-4">Today's Summary</h3>
+        <h3 className="font-bold mb-4">Today&apos;s Summary</h3>
         <div className="space-y-3">
           <div>
             <div className="flex justify-between text-sm mb-1">
@@ -83,7 +83,7 @@ export default function TrackingPage() {
 
       {/* Logged Meals */}
       <div>
-        <h3 className="font-bold mb-4">Today's Meals</h3>
+        <h3 className="font-bold mb-4">Today&apos;s Meals</h3>
         {todayLogs.length === 0 ? (
           <GlassCard className="p-8 text-center">
             <div className="text-4xl mb-2">🍽️</div>

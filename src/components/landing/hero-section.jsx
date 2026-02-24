@@ -94,7 +94,7 @@ export default function HeroSection() {
                   ⛔ Brain Fog
                 </div>
                 <h3 className="text-gray-400 text-xs uppercase font-bold tracking-widest mb-1">Current Diet</h3>
-                <div className="text-xl font-bold text-white mb-4">The "Indomie" Life 🍜</div>
+                <div className="text-xl font-bold text-white mb-4">The &ldquo;Indomie&rdquo; Life 🍜</div>
                 
                 <div className="space-y-2 text-xs mb-4">
                   <div className="flex justify-between border-b border-white/5 py-1">

@@ -52,7 +52,7 @@ export default function OnboardingPage() {
         <LoadingSpinner size="lg" />
         <h2 className="mt-6 text-2xl font-bold text-white">Generating Your Personalized Plan...</h2>
         <p className="mt-2 text-gray-400 max-w-md">
-          We're analyzing your profile, preferences, and budget to create the perfect meal plan for you.
+          We&apos;re analyzing your profile, preferences, and budget to create the perfect meal plan for you.
           This usually takes about 10-15 seconds.
         </p>
       </div>
@@ -95,7 +95,7 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Welcome to Nutri-Tech! 🎉</h1>
-          <p className="text-gray-400">Let's personalize your nutrition plan</p>
+          <p className="text-gray-400">Let&apos;s personalize your nutrition plan</p>
         </div>
 
         {/* Progress */}

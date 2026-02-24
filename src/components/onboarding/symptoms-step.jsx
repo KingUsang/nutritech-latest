@@ -38,7 +38,7 @@ export default function SymptomsStep() {
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium mb-3">
-          Any symptoms you're experiencing? (Select all that apply)
+          Any symptoms you&apos;re experiencing? (Select all that apply)
         </label>
         <div className="flex flex-wrap gap-2">
           {commonSymptoms.map((symptom) => (
@@ -64,7 +64,7 @@ export default function SymptomsStep() {
 
       <div className="bg-tech-primary/10 border border-tech-primary/20 rounded-xl p-4">
         <p className="text-sm text-gray-300">
-          🎉 You're all set! Click "Generate My Plan" to create your personalized 7-day meal plan
+          🎉 You&apos;re all set! Click &ldquo;Generate My Plan&rdquo; to create your personalized 7-day meal plan
           tailored to your budget, health goals, and Nigerian food preferences.
         </p>
       </div>

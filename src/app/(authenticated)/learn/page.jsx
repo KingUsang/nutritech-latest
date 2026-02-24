@@ -156,7 +156,7 @@ export default function LearnPage() {
       <GlassCard className="p-6 bg-tech-primary/10 border border-tech-primary/20">
         <h3 className="font-bold mb-3">💡 Quick Tip of the Day</h3>
         <p className="text-sm text-gray-300">
-          Combine beans and rice in the same meal to create a "complete protein" - your body will
+          Combine beans and rice in the same meal to create a &ldquo;complete protein&rdquo; - your body will
           get all essential amino acids needed for muscle repair and brain function!
         </p>
       </GlassCard>

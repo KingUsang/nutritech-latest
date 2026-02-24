@@ -118,7 +118,7 @@ export default function LoginForm({ onToggle }) {
       </button>
 
       <p className="text-center mt-8 text-sm text-gray-400">
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <button onClick={onToggle} className="text-tech-primary font-bold hover:underline ml-1">
           Sign Up
         </button>

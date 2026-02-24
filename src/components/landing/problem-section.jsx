@@ -37,7 +37,7 @@ export default function ProblemSection() {
             Why Your Grades Are Suffering
           </h2>
           <p className="text-gray-400">
-            It's not you. It's what you're fueling your brain with.
+            It&apos;s not you. It&apos;s what you&apos;re fueling your brain with.
           </p>
         </div>
 

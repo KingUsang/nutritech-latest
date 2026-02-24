@@ -39,13 +39,13 @@ export default function DashboardPage() {
           Welcome back, {userName}! 👋
         </h1>
         <p className="text-gray-400">
-          Let's continue your journey to better health and focus.
+          Let&apos;s continue your journey to better health and focus.
         </p>
       </GlassCard>
 
       {/* Today's Stats */}
       <div>
-        <h2 className="text-lg font-bold mb-4">Today's Nutrition</h2>
+        <h2 className="text-lg font-bold mb-4">Today&apos;s Nutrition</h2>
         <div className="grid grid-cols-2 gap-4">
           {quickStats.map((stat) => (
             <GlassCard key={stat.label} className="p-4">

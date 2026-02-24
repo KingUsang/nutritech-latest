@@ -10,7 +10,7 @@ export default function HowItWorksSection() {
             Your Personal <span className="text-tech-primary">Nutrition Engine</span>
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            We don't just guess. We analyze your student life to find the fuel you're missing.
+            We don&apos;t just guess. We analyze your student life to find the fuel you&apos;re missing.
           </p>
         </div>
 
@@ -24,7 +24,7 @@ export default function HowItWorksSection() {
             </div>
             <h3 className="font-bold text-xl mb-2">1. Your Profile</h3>
             <p className="text-sm text-gray-400 px-6">
-              Tell us your budget, schedule, and symptoms (e.g., "I'm always tired").
+              Tell us your budget, schedule, and symptoms (e.g., &ldquo;I&apos;m always tired&rdquo;).
             </p>
           </div>
 
@@ -42,7 +42,7 @@ export default function HowItWorksSection() {
             </div>
             <h3 className="font-bold text-xl mb-2">2. Smart Analysis</h3>
             <p className="text-sm text-gray-400 px-6 leading-relaxed">
-              We link "Tiredness" to "Iron Deficiency" and "Brain Fog" to "Low Protein".
+              We link &ldquo;Tiredness&rdquo; to &ldquo;Iron Deficiency&rdquo; and &ldquo;Brain Fog&rdquo; to &ldquo;Low Protein&rdquo;.
             </p>
           </div>
 
