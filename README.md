@@ -56,10 +56,6 @@ npm start
 - **Styling**: Tailwind CSS
 - **Fonts**: Google Fonts (Outfit)
 
-## Original HTML Files
-
-The original HTML files have been converted to Next.js pages with React components. They are preserved in the repository for reference but are not used in the Next.js application.
-
 ## Development Notes
 
 - Uses client-side components (`'use client'`) for interactive features
