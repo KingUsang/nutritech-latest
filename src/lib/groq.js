@@ -11,7 +11,13 @@ export const FALLBACK_MODEL = 'gemini-3-flash-preview';
 
 // Lazy client getter — only instantiated at request time, not at build time
 function getAI() {
-  return new GoogleGenAI({});
+  const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('Missing GOOGLE_API_KEY or GEMINI_API_KEY environment variable.');
+  }
+
+  return new GoogleGenAI({ apiKey });
 }
 
 /**
@@ -74,17 +80,22 @@ export async function generateMealPlan(userProfile) {
   // Fetch Western Blueprint from Spoonacular
   let blueprintData = {};
   try {
-    const spoonApiKey = process.env.SPOONACULAR_API_KEY || 'bbcfc275a92c47dcab323855a704568d';
+    const spoonApiKey = process.env.SPOONACULAR_API_KEY;
     const targetCalories = 2000; // Default or derive from profile
-    console.log('[Spoonacular] ▶ Fetching weekly blueprint...');
-    const spoonRes = await fetch(
-      `https://api.spoonacular.com/mealplanner/generate?timeFrame=week&targetCalories=${targetCalories}&apiKey=${spoonApiKey}`
-    );
-    if (spoonRes.ok) {
-      blueprintData = await spoonRes.json();
-      console.log('[Spoonacular] ✅ Blueprint fetched successfully');
+
+    if (!spoonApiKey) {
+      console.warn('[Spoonacular] ⚠️ SPOONACULAR_API_KEY is not set; generating without a nutrition blueprint.');
     } else {
-      console.warn('[Spoonacular] ⚠️ Failed to fetch blueprint:', spoonRes.statusText);
+      console.log('[Spoonacular] ▶ Fetching weekly blueprint...');
+      const spoonRes = await fetch(
+        `https://api.spoonacular.com/mealplanner/generate?timeFrame=week&targetCalories=${targetCalories}&apiKey=${spoonApiKey}`
+      );
+      if (spoonRes.ok) {
+        blueprintData = await spoonRes.json();
+        console.log('[Spoonacular] ✅ Blueprint fetched successfully');
+      } else {
+        console.warn('[Spoonacular] ⚠️ Failed to fetch blueprint:', spoonRes.statusText);
+      }
     }
   } catch (err) {
     console.warn('[Spoonacular] ⚠️ Error fetching blueprint:', err.message);
